@@ -98,41 +98,11 @@ for k, v in good_grams.items():
 
 keywords_list = []
 most_frequents_ngrams = {}
-for l in range(math.floor(len(good_grams) / 4), min_paper_occurence, -20):
-    res = []
-    for w in all_grams:
-        if w in most_frequents_ngrams:
-            break
+for w in all_grams:
+    most_frequents_ngrams[w]=sum([1 for k,v in good_grams.items() if w in v])
 
-        counter = 0
-        for k, v in good_grams.items():
-            if w in v:
-                counter += 1
 
-            if counter >= l:
-                most_frequents_ngrams[w]=l
-                break
 
-    if len(res) == 0:
-        ze_max = 0
-    else:
-        ze_max = max([len(x) for x in res])
-
-    for i in range(ze_max, max(ze_max - 3, 0), -1):
-        grams = sorted([r for r in res if len(r) == i],
-                       key=lambda w: -(good_dist.get(w) + 1) / (len(good_grams) + 1) / (bad_dist.get(w, 0) + 1) / (len(
-                           bad_grams) + 1))
-        if len(grams) > 0:
-            print(
-                "\n\n%d-grams contained in at least %d papers (and not in the excluded papers)\n===================== \n" % (
-                    i, l))
-            for w in grams:
-                print("[%d] %s (%f-%f) (%s)" % (
-                    l, " ".join(w), (good_dist.get(w) + 1) / (len(good_grams) + 1),
-                    (bad_dist.get(w, 0) + 1) / (len(bad_grams) + 1),
-                    #good_grams_dict[w]))
-                    ""))
-                keywords_list.append((i, l, good_grams_dict[w], w))
 
 
 def get_score(params, good_grams, bad_grams):
