@@ -12,12 +12,14 @@ from itertools import chain
 import itertools
 import functools
 import bibtexparser
+from tabulate import tabulate
 
 lemmatizer = WordNetLemmatizer()
 
 paper_count = 8
 grams_limit = 5
-min_paper_occurence = 1
+min_paper_occurence = 3
+result_max_occurence = 5
 
 custom_stop_words = set(
     ["introduction", "abstract", "data", "author", "doi", "www", "content", "http", "fig", "figure", "section",
@@ -33,7 +35,7 @@ TITLE_ABSTRACT_TEXT = lambda x: x.find("references\n")
 # paper_reader_stopper = TITLE_ABSTRACT_TEXT
 
 
-paper_reader_stopper = TITLE_AND_ABSTRACT
+paper_reader_stopper = TITLE_ABSTRACT_TEXT
 
 
 def get_grams(pattern, ):
@@ -77,9 +79,9 @@ def __extract_ngrams_from_raw_content(f, grams, i, raw):
     return f
 
 
-# good_grams, good_dist = get_grams('qgs/*.pdf')
-good_grams, good_dist = get_grams('scopus/*.bib')
-bad_grams, bad_dist = get_grams('dummy/*.pdf')
+good_grams, good_dist = get_grams('qgs/*.pdf')
+# good_grams, good_dist = get_grams('scopus/*.bib')
+bad_grams, bad_dist = get_grams('excluded/*.pdf')
 
 good_grams_dict = collections.defaultdict(list)
 for k, v in good_grams.items():
@@ -99,10 +101,22 @@ for k, v in good_grams.items():
 keywords_list = []
 most_frequents_ngrams = {}
 for w in all_grams:
-    most_frequents_ngrams[w]=sum([1 for k,v in good_grams.items() if w in v])
+    most_frequents_ngrams[w] = sum([1 for k, v in good_grams.items() if w in v])
 
+for l in range(math.floor(len(good_grams)), min_paper_occurence - 1, -1):
+    for gram_len in range(grams_limit, 0, -1):
+        grams = []
+        match = 0
+        for gram, vv in [(k, len(v)) for k, v in good_grams_dict.items()]:
+            if vv == l and len(gram) == gram_len and (not gram in bad_grams_dict):
+                grams.append((" ".join(gram), good_dist[gram]))
 
-
+        if len(grams) > 0:
+            print(
+                "\n\n%d-grams contained in %d papers (and not in the excluded papers, showing maxium %d entries)\n===================== \n\n" % (
+                    gram_len, l, result_max_occurence))
+            grams = sorted(grams, key=lambda x: -x[1])
+            print(tabulate(grams[:result_max_occurence], headers=["%d-grams" % gram_len, "Occurence in corpus"]))
 
 
 def get_score(params, good_grams, bad_grams):
@@ -123,29 +137,3 @@ def get_score(params, good_grams, bad_grams):
     precision = 100 * (len(selected_documents[0]) + 1) / (len(selected_documents[0]) + len(selected_documents[1]) + 1)
     recall = 100 * len(selected_documents[0]) / good_count
     return precision, recall, selected_documents[0], selected_documents[1]
-
-
-get_score([("blockchain",)], good_grams, bad_grams)
-from itertools import chain
-
-queries = list(({cc[3] for cc in c} for c in
-                chain(itertools.combinations(keywords_list, 1), itertools.combinations(keywords_list, 2)) if
-                len(functools.reduce(lambda x, y: x | set(y[2]), c, set())) == len(good_grams)))
-
-results = []
-for i, query in enumerate(queries):
-    print(f'{i:5}/{len(queries):05}', end="\r")
-    p, r, tp, fp = get_score(query, good_grams, bad_grams)
-    # print("%s\n\tprecision=%3.2f%%\trecall=%3.2f%%" % (" AND ".join([" ".join(q) for q in query]), p, r))
-    results.append((query, p, r))
-
-print()
-
-results = sorted(results, key=lambda x: -x[1])
-results_dict = {"' AND '".join(["  ".join(c) for c in r[0]]): r for r in results}
-
-for i, (k, v) in enumerate(results_dict.items()):
-    if i > 200:
-        break
-
-    print(f"'{k:60}': {v[1]}/{v[2]}")
