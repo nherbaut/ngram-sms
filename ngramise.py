@@ -82,6 +82,7 @@ def __extract_ngrams_from_raw_content(f, grams, i, raw):
 good_grams, good_dist = get_grams('qgs/*.pdf')
 # good_grams, good_dist = get_grams('scopus/*.bib')
 bad_grams, bad_dist = get_grams('excluded/*.pdf')
+#bad_grams, bad_dist = get_grams('dummy/*.pdf')
 
 good_grams_dict = collections.defaultdict(list)
 for k, v in good_grams.items():
