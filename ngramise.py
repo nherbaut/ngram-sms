@@ -16,7 +16,7 @@ from tabulate import tabulate
 
 lemmatizer = WordNetLemmatizer()
 
-paper_count = 8
+
 grams_limit = 5
 min_paper_occurence = 3
 result_max_occurence = 5
